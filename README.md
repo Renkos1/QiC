@@ -117,7 +117,7 @@ web 默认使用 13000 端口。改用其他端口时（例如 `pnpm --filter @q
 
 以下设置不在代码中，建仓后在 GitHub 页面上配置一次：
 
-1. **main 分支保护（Settings → Rules → Rulesets）**：必须通过 PR 合并；必需检查 `check`、`integration`、`e2e-smoke`、`codeql`、`gitleaks`、`audit`；要求 CODEOWNERS 批准；禁止 force push 与删除。
+1. **main 分支保护（Settings → Rules → Rulesets，规则集名 `main`）**：必须通过 PR 以 squash 合并；必需检查 `check`、`integration`、`e2e-smoke`、`codeql`、`gitleaks`、`audit`；review 意见需全部解决；禁止 force push 与删除。目前只有一位维护者（作者不能批准自己的 PR），所以必需批准数为 0；有第二位维护者后改为 1 并开启“要求 CODEOWNERS 批准”（Renovate 自动合并随之需要人工批准）。
 2. **合并方式（Settings → General）**：只允许 squash merge，合并后自动删除分支。
 3. **Actions（Settings → Actions → General）**：勾选 “Allow GitHub Actions to create and approve pull requests”，release-please 才能开发布 PR。GITHUB_TOKEN 开的 PR 不会触发 CI，建议另建 `RELEASE_PLEASE_TOKEN` secret（仅本仓库 Contents/Pull requests 读写的 fine-grained token）。
 4. **Renovate**：安装 [Renovate GitHub App](https://github.com/apps/renovate) 并授权本仓库。
