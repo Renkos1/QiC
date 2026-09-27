@@ -32,8 +32,11 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: isCI,
   retries: isCI ? 1 : 0,
-  reporter: isCI ? [["github"], ["html", { open: "never" }]] : [["list"]],
+  // CI logs only show complete lines, so `list` (one line per test) makes progress visible.
+  reporter: isCI ? [["github"], ["list"], ["html", { open: "never" }]] : [["list"]],
   timeout: 60_000,
+  // A stuck run fails with a report instead of being killed by the job timeout.
+  globalTimeout: isCI ? 15 * 60_000 : 0,
   expect: { timeout: 15_000 },
   use: {
     baseURL: externalBaseUrl ?? WEB_URL,
