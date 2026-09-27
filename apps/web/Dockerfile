@@ -22,10 +22,24 @@ COPY .pnpmfile.cjs ./
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
     pnpm install --frozen-lockfile --ignore-scripts
 COPY --from=pruner /repo/out/full/ .
+# Browser code is compiled with these values; empty ones leave the feature off.
+ARG GIT_SHA=dev
+ARG NEXT_PUBLIC_SENTRY_DSN=""
+ARG NEXT_PUBLIC_OTEL_BROWSER=""
+ARG SENTRY_ORG=""
+ARG SENTRY_PROJECT=""
+ENV NEXT_PUBLIC_RELEASE=${GIT_SHA}
 # Next "standalone" output traces exactly the files the server needs, node_modules included.
-RUN pnpm turbo run build --filter=@qic/web
+# A non-empty sentry_auth_token secret uploads source maps; being a secret, it never lands in a layer.
+RUN --mount=type=secret,id=sentry_auth_token \
+    SENTRY_AUTH_TOKEN="$(cat /run/secrets/sentry_auth_token 2>/dev/null || true)" \
+    pnpm turbo run build --filter=@qic/web
 
 FROM ${RUNTIME_IMAGE} AS runtime
+# The app runs with node alone; the bundled npm, npx and corepack only add attack surface
+# (Trivy flags CVEs in npm's own dependencies).
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
+    /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 PORT=3000 HOSTNAME=0.0.0.0
 WORKDIR /app
 # outputFileTracingRoot is the repo root, so the server lives at apps/web/server.js.

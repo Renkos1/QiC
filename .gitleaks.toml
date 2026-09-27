@@ -1,0 +1,10 @@
+# gitleaks configuration: the default rules plus allowlisted test-only fixtures.
+# gitleaks 配置：默认规则，加上仅供测试使用的固定值白名单。
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Fixed secrets that exist only in tests. 仅在测试中使用的固定密钥。"
+# Match the exact fixture value, never whole files, so a real key added to a test still fails.
+# 只匹配具体的固定值、不按文件放行，测试文件中出现真实密钥仍会被拦截。
+regexes = ['''integration-test-secret-0123456789abcdef''']

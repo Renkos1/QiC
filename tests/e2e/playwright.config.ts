@@ -26,14 +26,22 @@ const stackEnv = {
   API_ORIGIN: `http://localhost:${API_PORT}`,
 };
 
+// On Linux Playwright stops a server by SIGKILL to its process group, but `pnpm exec` runs the
+// command in a group of its own: the server survives, keeps the output pipe open and teardown
+// waits forever. pnpm forwards SIGTERM to that group, and the apps shut down on it.
+const gracefulShutdown = { signal: "SIGTERM", timeout: 10_000 } as const;
+
 /** Playwright configuration (Chromium only). Playwright 配置（仅 Chromium）。 */
 export default defineConfig({
   testDir: "./specs",
   fullyParallel: true,
   forbidOnly: isCI,
   retries: isCI ? 1 : 0,
-  reporter: isCI ? [["github"], ["html", { open: "never" }]] : [["list"]],
+  // CI logs only show complete lines, so `list` (one line per test) makes progress visible.
+  reporter: isCI ? [["github"], ["list"], ["html", { open: "never" }]] : [["list"]],
   timeout: 60_000,
+  // A stuck run fails with a report instead of being killed by the job timeout.
+  globalTimeout: isCI ? 15 * 60_000 : 0,
   expect: { timeout: 15_000 },
   use: {
     baseURL: externalBaseUrl ?? WEB_URL,
@@ -55,6 +63,7 @@ export default defineConfig({
           env: { ...stackEnv, PORT: String(API_PORT) },
           reuseExistingServer: !isCI,
           timeout: 60_000,
+          gracefulShutdown,
         },
         {
           name: "worker",
@@ -64,6 +73,7 @@ export default defineConfig({
           env: { ...stackEnv, LOG_LEVEL: "info", WORKER_HEALTH_PORT: "14300" },
           wait: { stdout: /worker started/ },
           timeout: 60_000,
+          gracefulShutdown,
         },
         {
           name: "web",
@@ -73,6 +83,7 @@ export default defineConfig({
           env: stackEnv,
           reuseExistingServer: !isCI,
           timeout: 120_000,
+          gracefulShutdown,
         },
       ],
 });

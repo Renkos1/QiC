@@ -1,8 +1,10 @@
 # SLO-based alert rules for the local obs profile (grafana/otel-lgtm), provisioned by
 # docker-compose.yml. Every rule links its runbook; thresholds are starting points, tune
 # them with real traffic. The same PromQL works in any Prometheus-compatible backend.
+# Runbook links are absolute GitHub URLs on main so they open from any Grafana, not only a checkout.
 # 本地 obs profile（grafana/otel-lgtm）的 SLO 告警规则，由 docker-compose.yml 挂载加载。
 # 每条规则都链接对应 runbook；阈值只是起点，需按真实流量调整。PromQL 可直接用于其他 Prometheus 兼容后端。
+# runbook 链接是 main 分支上的 GitHub 完整 URL，在任何 Grafana 中都能直接打开，不依赖本地检出。
 #
 # SLOs / 服务等级目标:
 #   api availability 99.5% of requests without 5xx      可用性：99.5% 的请求不返回 5xx
@@ -27,7 +29,7 @@ groups:
         labels: { severity: critical, slo: api-availability }
         annotations:
           summary: "{{ $labels.service_name }}: 5xx ratio above 14.4x the error budget over 5m and 1h"
-          runbook_url: docs/runbooks/api-5xx.md
+          runbook_url: https://github.com/Renkos1/QiC/blob/main/docs/runbooks/api-5xx.md
         data:
           - refId: A
             relativeTimeRange: { from: 3600, to: 0 }
@@ -64,7 +66,7 @@ groups:
         labels: { severity: warning, slo: api-latency }
         annotations:
           summary: "api p95 latency is {{ humanizeDuration $values.A.Value }}"
-          runbook_url: docs/runbooks/slow-api.md
+          runbook_url: https://github.com/Renkos1/QiC/blob/main/docs/runbooks/slow-api.md
         data:
           - refId: A
             relativeTimeRange: { from: 600, to: 0 }
@@ -94,7 +96,7 @@ groups:
         labels: { severity: warning, slo: api-latency }
         annotations:
           summary: "{{ $labels.service_name }}: event loop p99 delay is {{ humanizeDuration $values.A.Value }}"
-          runbook_url: docs/runbooks/slow-api.md
+          runbook_url: https://github.com/Renkos1/QiC/blob/main/docs/runbooks/slow-api.md
         data:
           - refId: A
             relativeTimeRange: { from: 600, to: 0 }
@@ -121,7 +123,7 @@ groups:
         labels: { severity: warning, slo: queue-latency }
         annotations:
           summary: "{{ $labels.messaging_destination_name }}: {{ $values.A.Value }} jobs waiting for 10 minutes"
-          runbook_url: docs/runbooks/queue-backlog.md
+          runbook_url: https://github.com/Renkos1/QiC/blob/main/docs/runbooks/queue-backlog.md
         data:
           - refId: A
             relativeTimeRange: { from: 600, to: 0 }
@@ -151,7 +153,7 @@ groups:
         labels: { severity: warning, slo: queue-latency }
         annotations:
           summary: "{{ $values.A.Value }} dead-lettered jobs are waiting for inspection"
-          runbook_url: docs/runbooks/queue-backlog.md
+          runbook_url: https://github.com/Renkos1/QiC/blob/main/docs/runbooks/queue-backlog.md
         data:
           - refId: A
             relativeTimeRange: { from: 600, to: 0 }
@@ -171,7 +173,7 @@ groups:
         labels: { severity: warning }
         annotations:
           summary: "{{ $labels.service_name }}: heap above 300 MB and growing for 30 minutes"
-          runbook_url: docs/runbooks/memory-leak.md
+          runbook_url: https://github.com/Renkos1/QiC/blob/main/docs/runbooks/memory-leak.md
         data:
           - refId: A
             relativeTimeRange: { from: 3600, to: 0 }
@@ -196,7 +198,7 @@ groups:
         labels: { severity: warning }
         annotations:
           summary: "{{ $labels.qic_ai_operation }}: more than 20% of AI calls failed over 15 minutes"
-          runbook_url: docs/runbooks/llm-output.md
+          runbook_url: https://github.com/Renkos1/QiC/blob/main/docs/runbooks/llm-output.md
         data:
           - refId: A
             relativeTimeRange: { from: 900, to: 0 }

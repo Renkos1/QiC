@@ -23,6 +23,8 @@
 ./deploy.sh <registry>/qic-api@sha256:… <registry>/qic-worker@sha256:… <registry>/qic-web@sha256:…
 ```
 
+通常不需要手动执行：`.github/workflows/deploy.yml` 会把本目录的文件复制到服务器，再用发布附带的 `images.env`（镜像 digest）调用 `deploy.sh`；手动运行该工作流并输入旧 tag 即可回滚到旧版本。所需的 secrets 与审批设置见根目录 README 的“仓库设置”。
+
 `deploy.sh` 的执行步骤：
 
 1. 把当前运行的镜像记录到 `.env.images.previous`。

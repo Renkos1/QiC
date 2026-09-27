@@ -1,0 +1,102 @@
+# Deploys a release to the single production server over SSH. The release carries images.env with
+# the image digests (written by release.yml); infra/compose/deploy.sh on the server pulls them,
+# waits for health checks, runs the smoke check and rolls back to the previous digests on failure.
+# Runs from release.yml (AUTO_DEPLOY) or by hand; deploying an older tag is how to roll back a release.
+#
+# 通过 SSH 把某个版本部署到唯一的生产服务器。版本附带 images.env（镜像 digest，由 release.yml 写入）；
+# 服务器上的 infra/compose/deploy.sh 拉取镜像、等待健康检查、执行冒烟检查，失败时自动回滚到上一组 digest。
+# 由 release.yml 自动调用（AUTO_DEPLOY），或手动触发；手动部署旧 tag 即为版本回滚。
+#
+# `production` environment: required reviewers, plus these secrets and variables:
+#   secrets   DEPLOY_HOST, DEPLOY_USER, DEPLOY_SSH_KEY (private key), DEPLOY_KNOWN_HOSTS (`ssh-keyscan <host>` output)
+#   variables DEPLOY_PATH (default /srv/qic), PUBLIC_WEB_URL (shown on the deployment)
+# `production` environment 需配置审批人，以及上述 secrets 与变量。
+name: Deploy
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: Release tag to deploy
+        type: string
+        required: true
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to deploy (an older tag rolls back to it), e.g. v0.2.0
+        type: string
+        required: true
+
+# One deploy at a time; a queued deploy waits instead of cancelling the running one.
+# 同一时间只进行一次部署；排队的部署等待，而不是取消正在进行的部署。
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: deploy
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment:
+      name: production
+      url: ${{ vars.PUBLIC_WEB_URL }}
+    env:
+      TAG: ${{ inputs.tag }}
+      DEPLOY_PATH: ${{ vars.DEPLOY_PATH || '/srv/qic' }}
+    steps:
+      # The compose files and scripts come from the same tag as the images.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.tag }}
+
+      - name: Image digests of the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download "$TAG" --pattern images.env --dir . ||
+            { echo "::error::$TAG has no images.env; was it published with IMAGE_REGISTRY set?"; exit 1; }
+          cat images.env
+
+      - name: Configure SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          [ -n "$DEPLOY_SSH_KEY" ] && [ -n "$DEPLOY_KNOWN_HOSTS" ] ||
+            { echo "::error::Set DEPLOY_SSH_KEY and DEPLOY_KNOWN_HOSTS on the production environment."; exit 1; }
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          # Pinned host keys: never trust whatever answers on first connect.
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+      # .env.prod stays on the server and is never uploaded; only versioned files are copied.
+      - name: Upload compose files
+        env:
+          TARGET: ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}
+        run: |
+          cd infra/compose
+          scp -p -i ~/.ssh/id_deploy -o StrictHostKeyChecking=yes \
+            docker-compose.prod.yml Caddyfile deploy.sh rollback.sh smoke.sh "$TARGET:$DEPLOY_PATH/"
+
+      - name: Deploy (health checks, smoke check, automatic rollback)
+        env:
+          TARGET: ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}
+        run: |
+          . ./images.env
+          ssh -i ~/.ssh/id_deploy -o StrictHostKeyChecking=yes "$TARGET" \
+            "cd '$DEPLOY_PATH' && ./deploy.sh '$API_IMAGE' '$WORKER_IMAGE' '$WEB_IMAGE'"
+          {
+            echo "### Deployed $TAG"
+            echo '```'
+            cat images.env
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Remove the SSH key
+        if: always()
+        run: rm -f ~/.ssh/id_deploy

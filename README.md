@@ -4,7 +4,7 @@
 
 - 架构：monorepo + 模块化单体（`apps/web`、`apps/api`、`apps/worker`）
 - 技术栈：TypeScript · pnpm + Turborepo · Next.js · NestJS · BullMQ · PostgreSQL + Drizzle · Redis
-- 协作准则：[AGENTS.md](AGENTS.md)；架构与数据流：[docs/architecture.md](docs/architecture.md)；分层、测试与调试指南：[docs/developer-guide.md](docs/developer-guide.md)；选型记录：[docs/adr](docs/adr/0001-foundation.md)
+- 协作准则：[AGENTS.md](AGENTS.md)；架构与数据流：[docs/architecture.md](docs/architecture.md)；分层、测试与调试指南：[docs/developer-guide.md](docs/developer-guide.md)；选型记录：[docs/adr](docs/adr/)（[0001 工程基座](docs/adr/0001-foundation.md)、[0002 CI/CD](docs/adr/0002-ci-cd.md)）
 
 ## 环境准备
 
@@ -100,6 +100,38 @@ web 默认使用 13000 端口。改用其他端口时（例如 `pnpm --filter @q
 ## 部署
 
 镜像构建：`pnpm docker:build`（构建 api、worker、web 三个镜像，并输出镜像体积）。单机部署、回滚和本地演练见 [infra/compose/README.md](infra/compose/README.md)。
+
+## CI/CD
+
+| 工作流 | 触发 | 内容 |
+|---|---|---|
+| [`ci.yml`](.github/workflows/ci.yml) | PR、推送 main | `check`：lint、typecheck + 单元测试（PR 上只跑受影响的包）、依赖规则、契约兼容性、生成文件是否已提交、覆盖率、build；`integration`：Testcontainers 集成测试 |
+| [`e2e.yml`](.github/workflows/e2e.yml) | PR、推送 main | PR 跑 `@smoke` 用例（开发服务器）；main 用生产镜像经 `infra/compose/deploy.sh` 部署后跑全量。给 PR 加 `e2e:production` 标签可在 PR 上跑生产全量 |
+| [`security.yml`](.github/workflows/security.yml) | PR、推送 main、每周一 | CodeQL、gitleaks、`pnpm audit`；每周另外重新构建镜像并用 Trivy 扫描 |
+| [`release.yml`](.github/workflows/release.yml) | 推送 main；修改镜像构建的 PR；手动 | release-please 维护发布 PR 与 CHANGELOG；发布时构建镜像 → Trivy → SBOM；设置 `IMAGE_REGISTRY` 后推送、cosign 签名；设置 `SENTRY_AUTH_TOKEN` 后上传 source map。PR 与手动运行只演练，不发布 |
+| [`deploy.yml`](.github/workflows/deploy.yml) | 发布后（`AUTO_DEPLOY`）或手动输入 tag | SSH 到服务器，按 digest 执行 `deploy.sh`（健康检查、冒烟、失败自动回滚）；手动部署旧 tag 即回滚 |
+
+依赖更新由 Renovate（[`.github/renovate.json5`](.github/renovate.json5)）每周一分组提交；minor/patch 在 CI 通过后自动合并。所有 Action 固定到 commit SHA。
+
+### 仓库设置（需人工完成）
+
+以下设置不在代码中，建仓后在 GitHub 页面上配置一次：
+
+1. **main 分支保护（Settings → Rules → Rulesets，规则集名 `main`）**：必须通过 PR 以 squash 合并；必需检查 `check`、`integration`、`e2e-smoke`、`codeql`、`gitleaks`、`audit`；review 意见需全部解决；禁止 force push 与删除。目前只有一位维护者（作者不能批准自己的 PR），所以必需批准数为 0；有第二位维护者后改为 1 并开启“要求 CODEOWNERS 批准”（Renovate 自动合并随之需要人工批准）。
+2. **合并方式（Settings → General）**：只允许 squash merge，合并后自动删除分支。
+3. **Actions（Settings → Actions → General）**：勾选 “Allow GitHub Actions to create and approve pull requests”，release-please 才能开发布 PR。GITHUB_TOKEN 开的 PR 不会触发 CI，建议另建 `RELEASE_PLEASE_TOKEN` secret（仅本仓库 Contents/Pull requests 读写的 fine-grained token）。
+4. **Renovate**：安装 [Renovate GitHub App](https://github.com/apps/renovate) 并授权本仓库。
+5. **安全**：开启 Private vulnerability reporting 与 Dependabot alerts。
+6. **发布与部署（按需）**：
+
+| 名称 | 类型 | 作用 |
+|---|---|---|
+| `IMAGE_REGISTRY` | 变量 | 镜像仓库前缀，如 `ghcr.io/renkos1`；未设置时发布只构建、扫描、生成 SBOM |
+| `REGISTRY_USERNAME` / `REGISTRY_PASSWORD` | 变量 / secret | 非 ghcr.io 的镜像仓库凭据（ghcr.io 使用工作流自带 token） |
+| `SENTRY_AUTH_TOKEN` | secret | 发布时上传 web source map；同时设置变量 `SENTRY_ORG`、`SENTRY_PROJECT` |
+| `NEXT_PUBLIC_SENTRY_DSN` / `NEXT_PUBLIC_OTEL_BROWSER` | 变量 | 编译进浏览器代码的错误上报与追踪开关 |
+| `AUTO_DEPLOY` | 变量 | 设为 `true` 时，每次发布后自动调用 `deploy.yml` |
+| `production` environment | environment | 配置审批人；secrets `DEPLOY_HOST`、`DEPLOY_USER`、`DEPLOY_SSH_KEY`、`DEPLOY_KNOWN_HOSTS`（`ssh-keyscan <host>` 的输出）；变量 `DEPLOY_PATH`（默认 `/srv/qic`）、`PUBLIC_WEB_URL` |
 
 ## 常用命令
 
