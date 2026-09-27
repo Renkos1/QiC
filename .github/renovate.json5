@@ -1,0 +1,48 @@
+// Renovate: weekly grouped dependency updates. Minor/patch PRs merge themselves once the required
+// CI checks pass (branch protection enforces that); majors wait for a human.
+// Renovate：每周分组更新依赖。minor/patch 的 PR 在必需的 CI 检查通过后自动合并（由分支保护保证）；major 需人工处理。
+{
+  $schema: "https://docs.renovatebot.com/renovate-schema.json",
+  extends: [
+    "config:recommended",
+    // Actions are pinned to commit SHAs; Renovate bumps the SHA and the version comment together.
+    // Action 固定到 commit SHA；Renovate 同时更新 SHA 与版本注释。
+    "helpers:pinGitHubActionDigests",
+    ":semanticCommits",
+  ],
+  schedule: ["before 6am on monday"],
+  // Wait until a release is a few days old (pnpm enforces a minimum release age as well).
+  // 新版本发布几天后再升级（pnpm 同样限制最短发布时长）。
+  minimumReleaseAge: "3 days",
+  lockFileMaintenance: { enabled: true, schedule: ["before 6am on monday"] },
+  packageRules: [
+    {
+      description: "Group all non-major updates into one PR and automerge it. 所有非 major 更新合并为一个 PR 并自动合并。",
+      matchUpdateTypes: ["minor", "patch", "pin", "digest"],
+      groupName: "non-major dependencies",
+      automerge: true,
+    },
+    {
+      description: "Node is pinned in .mise.toml, package.json engines and the Dockerfiles; bump them together. Node 版本在多处锁定，一起升级。",
+      matchPackageNames: ["node"],
+      groupName: "Node.js",
+      automerge: false,
+    },
+    {
+      description: "pnpm is pinned in .mise.toml and package.json; bump them together. pnpm 版本在两处锁定，一起升级。",
+      matchPackageNames: ["pnpm"],
+      groupName: "pnpm",
+      automerge: false,
+    },
+  ],
+  customManagers: [
+    {
+      description: "turbo version used by `turbo prune` in the Dockerfiles. Dockerfile 中 `turbo prune` 使用的 turbo 版本。",
+      customType: "regex",
+      managerFilePatterns: ["/(^|/)Dockerfile$/"],
+      matchStrings: ["pnpm dlx turbo@(?<currentValue>\d+\.\d+\.\d+)"],
+      depNameTemplate: "turbo",
+      datasourceTemplate: "npm",
+    },
+  ],
+}

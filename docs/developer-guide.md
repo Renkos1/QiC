@@ -86,6 +86,8 @@ web（Next.js，apps/web）───── /api/* 重写（开发）或 Caddy �
 - 组件测试在文件第一行写 `// @vitest-environment jsdom`，用 `src/test/render.tsx` 的 `renderWithQuery` 渲染；网络只通过 `vi.mock("@/lib/api")` 替换，hooks 与 React Query 保持真实。
 - 覆盖率只统计单元测试（入口文件、生成代码除外），报告在 `coverage/index.html`；模块装配、仓储和页面由集成测试与 e2e 覆盖。
 
+CI 中的对应关系（工作流说明见 README “CI/CD”）：单元测试、覆盖率、契约检查在 `check` job；集成测试在 `integration` job；PR 只跑 e2e 冒烟，main 用生产镜像跑全量。CI 失败时，先在本地用同一条命令复现：覆盖率报告、Playwright 的 trace 与截图都作为 artifact 上传在对应运行的 Summary 页面，下载后用 `pnpm --filter @qic/e2e exec playwright show-trace <trace.zip>` 查看。
+
 ## 6. 调试手册
 
 ### 6.1 按请求 id 或 trace 追踪

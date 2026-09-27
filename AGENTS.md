@@ -42,6 +42,7 @@ tests/e2e    Playwright；tests/load：k6
 evals/       AI 功能评测集
 docs/        developer-guide.md（分层与调试指南）、architecture.md（架构图）、adr/、runbooks/
 tools/       脚本、代码生成器
+.github/     CI/CD 工作流（ci、e2e、security、release、deploy）、共用 action、Renovate、模板
 ```
 依赖规则（由 lint 和 CI 强制）：
 - `apps/*` 可以依赖 `packages/*`、`contracts`；**`packages/*` 禁止依赖 `apps/*`**；包之间禁止循环依赖。
@@ -175,6 +176,8 @@ NestJS（apps/api、apps/worker）：
 - PR 要小（建议不超过 400 行，生成文件除外），描述包括：动机、改动内容、验证方式、风险与回滚方案。
 - 未完成的功能用 feature flag 隐藏，保证 `main` 随时可以发布。
 - 合并方式：squash merge，需要 CI 全部通过 + CODEOWNERS review。
+- CI 的检查与 `pnpm check` 一致，另加覆盖率、集成测试、e2e 与安全扫描；本地先跑 `pnpm check` 再推送。工作流里的 Action 一律固定到 commit SHA（后缀写版本注释），由 Renovate 更新。
+- 版本与 CHANGELOG 由 release-please 根据提交信息生成，不要手动修改版本号或 `CHANGELOG.md`。
 
 ## 15. 必须先征得人类确认的操作
 - 新增、升级、删除依赖；修改 lockfile 以外的构建或 CI 配置

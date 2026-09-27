@@ -1,0 +1,126 @@
+# End-to-end tests. PRs run the @smoke specs against the dev servers; main runs the whole suite
+# against the production images deployed with infra/compose, because prefetch caching and
+# hydration timing bugs only show up in production builds.
+# 端到端测试：PR 用开发服务器跑 @smoke 用例；main 用生产镜像（经 infra/compose 部署）跑全量，
+# 因为预取缓存、水合时序一类问题只在生产构建中出现。
+# Add the `e2e:production` label to a PR to run the production suite on it as well.
+# 给 PR 加上 `e2e:production` 标签，可在 PR 上同样运行生产镜像全量测试。
+name: E2E
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  TURBO_TELEMETRY_DISABLED: "1"
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  smoke:
+    name: e2e-smoke
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: ./.github/actions/setup
+        with:
+          tools: node pnpm
+
+      - name: Start Postgres, Redis and Mailpit
+        run: docker compose up -d --wait
+
+      - name: Migrate the database
+        run: pnpm db:migrate
+
+      - name: Install Chromium
+        run: pnpm --filter @qic/e2e e2e:install
+
+      - name: Smoke tests
+        run: pnpm --filter @qic/e2e e2e:smoke
+
+      - name: Upload Playwright report, traces and screenshots
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: playwright-smoke
+          path: |
+            tests/e2e/playwright-report/
+            tests/e2e/test-results/
+          retention-days: 14
+
+  production:
+    name: e2e-production
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'e2e:production')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: ./.github/actions/setup
+        with:
+          tools: node pnpm
+
+      - uses: ./.github/actions/build-images
+        with:
+          tag: ci
+
+      # Only Mailpit is needed from the dev stack: the tests read verification mail from it.
+      - name: Start Mailpit
+        run: docker compose up -d --wait mailpit
+
+      # Same files and script as a real deploy (infra/compose/README.md, "local rehearsal").
+      # Rate limiting is off because the suite signs up many users from one IP.
+      - name: Deploy the images with the production compose files
+        working-directory: infra/compose
+        run: |
+          host_ip=$(docker network inspect bridge --format '{{(index .IPAM.Config 0).Gateway}}')
+          cat > .env.prod <<EOF
+          SITE_ADDRESS=localhost
+          HTTP_PORT=18080
+          HTTPS_PORT=18443
+          NODE_ENV=production
+          LOG_LEVEL=info
+          PUBLIC_WEB_URL=https://localhost:18443
+          POSTGRES_PASSWORD=$(openssl rand -hex 24)
+          REDIS_PASSWORD=$(openssl rand -hex 24)
+          BETTER_AUTH_SECRET=$(openssl rand -base64 32)
+          RATE_LIMIT_ENABLED=false
+          SMTP_URL=smtp://${host_ip}:11025
+          MAIL_FROM=QiC <no-reply@localhost>
+          EOF
+          SKIP_PULL=1 SMOKE_INSECURE=1 ./deploy.sh qic-api:ci qic-worker:ci qic-web:ci
+
+      - name: Install Chromium
+        run: pnpm --filter @qic/e2e e2e:install
+
+      - name: Full e2e suite against the production images
+        run: pnpm e2e
+        env:
+          E2E_BASE_URL: https://localhost:18443
+
+      - name: Container logs
+        if: failure()
+        working-directory: infra/compose
+        run: docker compose -f docker-compose.prod.yml --env-file .env.prod --env-file .env.images logs --no-color --tail 300
+
+      - name: Upload Playwright report, traces and screenshots
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: playwright-production
+          path: |
+            tests/e2e/playwright-report/
+            tests/e2e/test-results/
+          retention-days: 14

@@ -1,0 +1,7 @@
+# Issues must use a template; security reports go through private advisories.
+# 创建 issue 必须使用模板；安全问题通过私密安全公告报告。
+blank_issues_enabled: false
+contact_links:
+  - name: 安全问题 / Security vulnerability
+    url: https://github.com/Renkos1/QiC/security/advisories/new
+    about: 请私下报告，不要公开提交 issue。Report privately, not as a public issue.

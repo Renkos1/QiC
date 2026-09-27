@@ -1,0 +1,85 @@
+# Quality gate for every PR and every push to main; the job names are the required checks.
+# 每个 PR 和每次推送 main 的质量门禁；job 名称即分支保护中的必需检查项。
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# A newer push to the same PR supersedes the running check; main runs are never cancelled.
+# 同一 PR 的新推送会取消正在运行的检查；main 上的运行不取消。
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  TURBO_TELEMETRY_DISABLED: "1"
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  check:
+    name: check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Full history: `turbo --affected` and `contracts:check` compare against origin/main.
+          fetch-depth: 0
+
+      - uses: ./.github/actions/setup
+        with:
+          tools: node pnpm github:oasdiff/oasdiff
+
+      - name: Lint
+        run: pnpm lint
+
+      # PRs only run tasks for packages changed against the base branch (and their dependents);
+      # main runs everything, mostly replayed from the turbo cache.
+      - name: Typecheck and unit tests
+        run: pnpm turbo run typecheck test ${{ github.event_name == 'pull_request' && '--affected' || '' }}
+
+      - name: Dependency rules
+        run: pnpm deps:check
+
+      - name: Contract compatibility
+        run: pnpm contracts:check
+
+      - name: Generated files are up to date
+        run: |
+          pnpm gen
+          git diff --exit-code || { echo "::error::Run 'pnpm gen' and commit the generated files."; exit 1; }
+
+      - name: Unit test coverage
+        run: pnpm test:coverage
+
+      - name: Upload coverage report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: coverage
+          path: coverage/
+          retention-days: 14
+
+      - name: Build
+        run: pnpm build
+
+  integration:
+    name: integration
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: ./.github/actions/setup
+        with:
+          tools: node pnpm
+
+      # Testcontainers starts its own Postgres and Redis on the runner's Docker engine,
+      # the same way it does locally, so no service containers are declared here.
+      - name: Integration tests
+        run: pnpm test:int

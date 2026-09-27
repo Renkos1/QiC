@@ -1,0 +1,39 @@
+# Bug report form: the traceId lets maintainers jump straight to the trace, logs and Sentry event.
+# 缺陷报告表单：traceId 可直接定位到对应的 trace、日志和 Sentry 事件。
+name: 缺陷 / Bug
+description: 报告一个与预期不符的行为。Report behaviour that differs from what is expected.
+labels: [bug]
+body:
+  - type: input
+    id: trace-id
+    attributes:
+      label: traceId
+      description: 错误响应（problem+json）中的 `traceId`，或浏览器开发者工具中响应头里的请求 id。The `traceId` from the error response.
+      placeholder: 4bf92f3577b34da6a3ce929d0e0e4736
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤 / Steps to reproduce
+      placeholder: |
+        1. 打开 …
+        2. 点击 …
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期望结果 / Expected
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: 实际结果 / Actual
+      description: 附上错误信息或截图；不要粘贴密钥、token 或个人信息。No secrets or personal data.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: 版本或环境 / Version or environment
+      description: 版本号（release tag）或提交 id、浏览器、本地还是生产环境。Release tag or commit, browser, local or production.
