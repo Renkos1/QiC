@@ -1,6 +1,6 @@
 # Runbooks
 
-线上问题的排查手册。每条 Grafana 告警（`infra/obs/grafana/alerting/qic-slo.yaml`）都通过 `runbook_url` 指向其中一份。
+线上问题的排查手册。每条 Grafana 告警（`infra/obs/grafana/alerting/qic-slo.yaml`）都通过 `runbook_url` 指向其中一份。链接是 `main` 分支上的 GitHub 完整 URL（`https://github.com/Renkos1/QiC/blob/main/docs/runbooks/…`）；重命名或移动手册时要同步修改告警规则。
 
 | 手册 | 对应告警 |
 |---|---|
