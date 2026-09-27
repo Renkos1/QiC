@@ -114,6 +114,9 @@ jobs:
           exit-code: "1"
           skip-setup-trivy: true
 
+      # sbom-action writes output-file as given and does not create its directory.
+      - name: SBOM directory
+        run: mkdir -p sbom
       - name: SBOM qic-api
         uses: anchore/sbom-action@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
         with:
