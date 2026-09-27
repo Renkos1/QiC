@@ -32,6 +32,10 @@ RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
     pnpm --filter @qic/api deploy --prod --legacy --ignore-scripts /out
 
 FROM ${RUNTIME_IMAGE} AS runtime
+# The app runs with node alone; the bundled npm, npx and corepack only add attack surface
+# (Trivy flags CVEs in npm's own dependencies).
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
+    /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack
 ENV NODE_ENV=production
 WORKDIR /app
 # Files stay root-owned and the process runs as "node", so the app cannot modify its own code.

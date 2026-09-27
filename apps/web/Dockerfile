@@ -36,6 +36,10 @@ RUN --mount=type=secret,id=sentry_auth_token \
     pnpm turbo run build --filter=@qic/web
 
 FROM ${RUNTIME_IMAGE} AS runtime
+# The app runs with node alone; the bundled npm, npx and corepack only add attack surface
+# (Trivy flags CVEs in npm's own dependencies).
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
+    /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 PORT=3000 HOSTNAME=0.0.0.0
 WORKDIR /app
 # outputFileTracingRoot is the repo root, so the server lives at apps/web/server.js.
