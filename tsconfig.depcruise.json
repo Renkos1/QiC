@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  // Only for dependency-cruiser (see .dependency-cruiser.cjs): resolves apps/web's "@/" alias.
+  // It must live at the repo root because dependency-cruiser resolves paths from its cwd.
+  // 仅供 dependency-cruiser 使用：解析 apps/web 的 "@/" 路径别名；必须放在仓库根目录。
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./apps/web/src/*"]
+    }
+  },
+  "include": ["apps/web/src"]
+}

@@ -1,0 +1,19 @@
+{
+  "name": "@qic/e2e",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Playwright end-to-end tests against the full local stack.",
+  "scripts": {
+    "e2e": "playwright test",
+    "e2e:smoke": "playwright test --grep @smoke",
+    "e2e:install": "playwright install --with-deps chromium",
+    "lint": "biome check .",
+    "typecheck": "tsc-native --noEmit"
+  },
+  "devDependencies": {
+    "@playwright/test": "catalog:",
+    "@qic/config": "workspace:*",
+    "@types/node": "catalog:"
+  }
+}

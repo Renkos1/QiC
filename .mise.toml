@@ -1,0 +1,11 @@
+# Pinned tool versions; run `mise install` after cloning or when this file changes.
+# 锁定的工具版本；克隆后或本文件变更后运行 `mise install`。修改版本会使 turbo 缓存全部失效。
+[tools]
+# Also pinned in the Dockerfiles' base images; bump both together. 与 Dockerfile 基础镜像的 Node 版本一起升级。
+node = "24.21.0"
+# Must match "packageManager" in package.json. 必须与 package.json 的 packageManager 一致。
+pnpm = "12.6.0"
+# OpenAPI breaking-change detector used by `pnpm contracts:check`. 契约兼容性检查工具。
+"github:oasdiff/oasdiff" = "1.32.1"
+# Load testing (`pnpm test:load`). 压测工具。
+k6 = "2.3.0"

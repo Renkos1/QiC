@@ -1,0 +1,69 @@
+# Local development dependencies. Host ports use the 1xxxx range to avoid clashing with
+# other local services; containers keep their standard ports.
+# 本地开发依赖。宿主机端口使用 1xxxx 段以避免与本机其他服务冲突；容器内仍是标准端口。
+#   docker compose up -d                   -> postgres, redis, mailpit
+#   docker compose --profile obs up -d     -> + grafana/otel-lgtm (Grafana on :13001)
+# Production uses infra/compose/docker-compose.prod.yml instead. 生产环境使用 infra/compose/docker-compose.prod.yml。
+name: qic
+
+services:
+  postgres:
+    image: postgres:18.6-alpine
+    environment:
+      POSTGRES_USER: qic
+      POSTGRES_PASSWORD: qic
+      POSTGRES_DB: qic
+    ports:
+      - "15432:5432"
+    volumes:
+      # Postgres 18+ keeps versioned data dirs under /var/lib/postgresql. PG 18 起数据目录按版本放在该路径下。
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U qic -d qic"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:8.8.3-alpine
+    # BullMQ requires noeviction so queued jobs are never dropped under memory pressure. BullMQ 要求内存满时不淘汰键，避免丢任务。
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
+    ports:
+      - "16379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Catches all outgoing mail in development; open the UI to read it. 开发环境拦截所有外发邮件，在 Web 界面查看。
+  mailpit:
+    image: axllent/mailpit:v1.31.2
+    ports:
+      - "11025:1025" # SMTP
+      - "18025:8025" # Web UI + API
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Optional: Grafana + Loki/Tempo/Mimir with an OTLP endpoint. 可选：带 OTLP 接入的 Grafana 观测全家桶。
+  otel-lgtm:
+    image: grafana/otel-lgtm:0.33.1
+    profiles: ["obs"]
+    ports:
+      - "13001:3000" # Grafana
+      - "14317:4317" # OTLP gRPC
+      - "14318:4318" # OTLP HTTP
+    volumes:
+      - lgtm-data:/data
+      # SLO alert rules; each links its runbook in docs/runbooks. SLO 告警规则，每条都链接 docs/runbooks 中的手册。
+      - ./infra/obs/grafana/alerting/qic-slo.yaml:/otel-lgtm/grafana/conf/provisioning/alerting/qic-slo.yaml:ro
+
+volumes:
+  postgres-data:
+  redis-data:
+  lgtm-data:

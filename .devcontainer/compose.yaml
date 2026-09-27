@@ -1,0 +1,18 @@
+# Adds the workspace container to the dev stack in ../docker-compose.yml. Services are
+# reached by name on the compose network, so the connection strings differ from .env.example.
+# 在 ../docker-compose.yml 的开发依赖旁加入工作区容器。容器内通过服务名访问依赖，
+# 因此连接串与 .env.example 中的 localhost 端口不同。
+services:
+  workspace:
+    image: mcr.microsoft.com/devcontainers/base:trixie
+    command: sleep infinity
+    volumes:
+      - ..:/workspaces/qic:cached
+    environment:
+      DATABASE_URL: postgres://qic:qic@postgres:5432/qic
+      REDIS_URL: redis://redis:6379
+      SMTP_URL: smtp://mailpit:1025
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      mailpit: { condition: service_healthy }

@@ -1,0 +1,33 @@
+{
+  "name": "@qic/config",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared TypeScript and Vitest presets.",
+  "bin": {
+    "tsc-native": "./bin/tsc-native.mjs"
+  },
+  "exports": {
+    "./tsconfig/base.json": "./tsconfig/base.json",
+    "./tsconfig/node.json": "./tsconfig/node.json",
+    "./tsconfig/library.json": "./tsconfig/library.json",
+    "./tsconfig/next.json": "./tsconfig/next.json",
+    "./vitest": "./vitest.preset.ts"
+  },
+  "scripts": {
+    "lint": "biome check .",
+    "typecheck": "node ./bin/tsc-native.mjs --noEmit"
+  },
+  "dependencies": {
+    "typescript-native": "npm:typescript@7.0.2"
+  },
+  "peerDependencies": {
+    "vitest": "catalog:",
+    "vite": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:"
+  }
+}

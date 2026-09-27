@@ -1,0 +1,83 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  // Plain streamed logs (works in CI and editor terminals). 输出为顺序日志流，CI 与编辑器终端都可读。
+  "ui": "stream",
+  // Changing shared tsconfig presets or tool versions invalidates every cache. 共享 tsconfig 或工具版本变化时，所有缓存失效。
+  "globalDependencies": ["packages/config/tsconfig/**", ".mise.toml"],
+  // Part of every task hash. 参与所有任务的缓存哈希。
+  "globalEnv": ["NODE_ENV"],
+  // Strict env mode: tasks only see these variables, and they do not affect cache hashes.
+  // Add a variable here when an app reads it, or turbo will hide it from the app.
+  // 严格环境变量模式：任务只能看到这里列出的变量，且不影响缓存哈希。应用新增读取的变量时必须加到这里。
+  "globalPassThroughEnv": [
+    "DATABASE_URL",
+    "REDIS_URL",
+    "PUBLIC_WEB_URL",
+    "API_ORIGIN",
+    "BETTER_AUTH_SECRET",
+    "RATE_LIMIT_ENABLED",
+    "SMTP_URL",
+    "MAIL_FROM",
+    "LOG_LEVEL",
+    "PORT",
+    "WORKER_CONCURRENCY",
+    "WORKER_HEALTH_PORT",
+    "RELEASE",
+    "GIT_SHA",
+    "ANTHROPIC_API_KEY",
+    "AI_MODEL",
+    "AI_PRICE_INPUT_USD_PER_MTOK",
+    "AI_PRICE_OUTPUT_USD_PER_MTOK",
+    "AI_TRACE_CONTENT",
+    // Observability: all optional, read at runtime. 可观测性：均为可选，运行时读取。
+    "OTEL_*",
+    "LANGFUSE_*",
+    "SENTRY_DSN",
+    "CI",
+    "DOCKER_HOST",
+    "TESTCONTAINERS_*"
+  ],
+  "tasks": {
+    // Code generation: openapi.json, then the typed client. 代码生成：先 openapi.json，再类型化客户端。
+    "gen": {
+      "dependsOn": ["^gen"],
+      "outputs": ["openapi/**", "src/**/*.gen.ts"]
+    },
+    // API_ORIGIN (rewrites) and NEXT_PUBLIC_* (browser code) are baked into web at build time.
+    // The Sentry upload credentials only add a side effect, so they do not change the hash.
+    // web 在构建时固化 API_ORIGIN（rewrites）与 NEXT_PUBLIC_*（浏览器代码）；Sentry 上传凭据只产生副作用，不参与哈希。
+    "build": {
+      "dependsOn": ["^build", "gen"],
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**"],
+      "env": ["API_ORIGIN", "NEXT_PUBLIC_*"],
+      "passThroughEnv": ["SENTRY_AUTH_TOKEN", "SENTRY_ORG", "SENTRY_PROJECT"]
+    },
+    "dev": {
+      "dependsOn": ["^build", "gen"],
+      "cache": false,
+      "persistent": true,
+      "passThroughEnv": ["NEXT_PUBLIC_*"]
+    },
+    "lint": {
+      "outputs": []
+    },
+    // Workspace packages are checked from source, so only generated code must exist first.
+    // 工作区包按源码检查，只需要先生成代码。
+    "typecheck": {
+      "dependsOn": ["^gen", "gen"],
+      "outputs": []
+    },
+    "test": {
+      "dependsOn": ["^gen", "gen"],
+      "outputs": []
+    },
+    // Uses real containers; never cached. 使用真实容器，不缓存。
+    "test:int": {
+      "dependsOn": ["^gen", "gen"],
+      "cache": false
+    },
+    "check": {
+      "dependsOn": ["lint", "typecheck", "test"]
+    }
+  }
+}

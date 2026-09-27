@@ -1,0 +1,33 @@
+{
+  "name": "@qic/api-client",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Typed HTTP client generated from contracts/openapi/openapi.json.",
+  "exports": {
+    ".": {
+      "@qic/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc-native -p tsconfig.build.json",
+    "gen": "openapi-typescript node_modules/@qic/contracts/openapi/openapi.json --output src/schema.gen.ts",
+    "lint": "biome check .",
+    "typecheck": "tsc-native --noEmit"
+  },
+  "dependencies": {
+    "openapi-fetch": "catalog:"
+  },
+  "devDependencies": {
+    "@qic/config": "workspace:*",
+    "@qic/contracts": "workspace:*",
+    "@types/node": "catalog:",
+    "openapi-typescript": "catalog:",
+    "typescript": "catalog:"
+  }
+}

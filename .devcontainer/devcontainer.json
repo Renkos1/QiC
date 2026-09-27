@@ -1,0 +1,38 @@
+// Dev container: a Linux workspace next to the docker-compose.yml services (Postgres,
+// Redis, Mailpit). Tool versions still come from .mise.toml. On Windows, open it with
+// "Dev Containers: Clone Repository in Container Volume" so node_modules built for Linux
+// never mix with a Windows checkout.
+// 开发容器：Linux 工作区 + docker-compose.yml 中的依赖服务（Postgres、Redis、Mailpit），工具版本仍由 .mise.toml 决定。
+// Windows 上请用“Clone Repository in Container Volume”打开，避免 Linux 的 node_modules 与 Windows 检出混在一起。
+{
+  "name": "QiC",
+  "dockerComposeFile": ["../docker-compose.yml", "compose.yaml"],
+  "service": "workspace",
+  "runServices": ["workspace", "postgres", "redis", "mailpit"],
+  "workspaceFolder": "/workspaces/qic",
+  "shutdownAction": "stopCompose",
+  "features": {
+    "ghcr.io/devcontainers-extra/features/mise:1": {},
+    // Testcontainers (pnpm test:int) and docker compose use the host's Docker. 集成测试与 compose 使用宿主机的 Docker。
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
+  },
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  // web, api, Mailpit UI; add 13001 when running the obs profile. web、api、Mailpit 界面；启用 obs profile 时再加 13001。
+  "forwardPorts": [13000, 14000, 18025],
+  "portsAttributes": {
+    "13000": { "label": "web" },
+    "14000": { "label": "api" },
+    "18025": { "label": "Mailpit" }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "biomejs.biome",
+        "vitest.explorer",
+        "ms-playwright.playwright",
+        "bradlc.vscode-tailwindcss"
+      ],
+      "settings": { "editor.defaultFormatter": "biomejs.biome" }
+    }
+  }
+}

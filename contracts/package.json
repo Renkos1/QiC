@@ -1,0 +1,37 @@
+{
+  "name": "@qic/contracts",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "API contract source of truth: zod schemas and OpenAPI route definitions.",
+  "exports": {
+    ".": {
+      "@qic/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./openapi.json": "./openapi/openapi.json"
+  },
+  "files": [
+    "dist",
+    "openapi"
+  ],
+  "scripts": {
+    "build": "tsc-native -p tsconfig.build.json",
+    "gen": "tsx --conditions=@qic/source scripts/export-openapi.ts",
+    "contracts:check": "tsx scripts/check-breaking.ts",
+    "lint": "biome check .",
+    "typecheck": "tsc-native --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@asteasolutions/zod-to-openapi": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@qic/config": "workspace:*",
+    "@types/node": "catalog:",
+    "tsx": "catalog:",
+    "vitest": "catalog:"
+  }
+}

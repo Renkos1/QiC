@@ -1,0 +1,29 @@
+# Keep the build context small and free of secrets. turbo prune selects what each
+# image needs; everything here is either regenerated in the build or never shipped.
+# 保持构建上下文小且不含密钥。turbo prune 会为每个镜像挑选所需文件；以下内容要么在构建中重新生成，要么永不进入镜像。
+
+# Installed or built inside the image. 在镜像内安装或构建。
+**/node_modules
+**/dist
+**/.next
+**/.turbo
+**/coverage
+**/*.tsbuildinfo
+
+# Local-only tooling and history. 仅本地使用的工具目录与 git 历史。
+.git
+.claude
+.vscode
+.devcontainer
+
+# Test and eval output. 测试与评测输出。
+tests/e2e/test-results
+tests/e2e/playwright-report
+evals/results
+**/*.log
+
+# Secrets never enter an image; runtime config comes from the environment. 密钥永不进入镜像；运行时配置来自环境变量。
+.env
+.env.*
+!.env.example
+!.env.*.example

@@ -1,0 +1,8 @@
+{
+  "operation": "split-todos",
+  "score": null,
+  "passRate": null,
+  "model": null,
+  "recordedAt": null,
+  "note": "No baseline yet. Record one with ANTHROPIC_API_KEY set: pnpm eval -- --update-baseline"
+}

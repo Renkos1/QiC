@@ -1,0 +1,46 @@
+{
+  "name": "@qic/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "HTTP API (NestJS) including Better Auth.",
+  "scripts": {
+    "build": "tsc-native -p tsconfig.build.json",
+    "dev": "tsx watch --env-file-if-exists=../../.env --conditions=@qic/source --import ./src/instrument.ts src/main.ts",
+    "dev:inspect": "tsx watch --inspect=9229 --env-file-if-exists=../../.env --conditions=@qic/source --import ./src/instrument.ts src/main.ts",
+    "start": "node --enable-source-maps --import ./dist/instrument.js dist/main.js",
+    "lint": "biome check .",
+    "typecheck": "tsc-native --noEmit",
+    "test": "vitest run",
+    "test:int": "vitest run --config vitest.int.config.ts"
+  },
+  "dependencies": {
+    "@nestjs/common": "catalog:",
+    "@nestjs/core": "catalog:",
+    "@nestjs/platform-express": "catalog:",
+    "@opentelemetry/api": "catalog:",
+    "@qic/ai": "workspace:*",
+    "@qic/contracts": "workspace:*",
+    "@qic/db": "workspace:*",
+    "@qic/logger": "workspace:*",
+    "@qic/telemetry": "workspace:*",
+    "better-auth": "catalog:",
+    "bullmq": "catalog:",
+    "bullmq-otel": "catalog:",
+    "drizzle-orm": "catalog:",
+    "ioredis": "catalog:",
+    "reflect-metadata": "catalog:",
+    "rxjs": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@bull-board/api": "catalog:",
+    "@bull-board/express": "catalog:",
+    "@nestjs/testing": "catalog:",
+    "@qic/config": "workspace:*",
+    "@testcontainers/redis": "catalog:",
+    "@types/node": "catalog:",
+    "tsx": "catalog:",
+    "vitest": "catalog:"
+  }
+}

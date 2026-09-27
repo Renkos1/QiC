@@ -1,0 +1,33 @@
+{
+  "name": "@qic/logger",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Structured pino logger shared by all Node apps.",
+  "exports": {
+    ".": {
+      "@qic/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc-native -p tsconfig.build.json",
+    "lint": "biome check .",
+    "typecheck": "tsc-native --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@opentelemetry/api": "catalog:",
+    "pino": "catalog:",
+    "pino-pretty": "catalog:"
+  },
+  "devDependencies": {
+    "@qic/config": "workspace:*",
+    "@types/node": "catalog:",
+    "vitest": "catalog:"
+  }
+}

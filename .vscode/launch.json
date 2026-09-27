@@ -1,0 +1,82 @@
+{
+  // Debug configurations for the Node apps and unit tests. Start dependencies first
+  // (`docker compose up -d`). "launch" starts a process under the debugger; "attach"
+  // connects to one started with `pnpm --filter @qic/<app> dev:inspect`.
+  // Node 应用与单元测试的调试配置，先启动依赖（docker compose up -d）。
+  // “launch” 在调试器中启动进程；“attach” 连接到用 `pnpm --filter @qic/<app> dev:inspect` 启动的进程。
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "api: launch",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/apps/api",
+      "runtimeArgs": [
+        "--env-file-if-exists=../../.env",
+        "--conditions=@qic/source",
+        "--import",
+        "tsx",
+        "--import",
+        "./src/instrument.ts"
+      ],
+      "program": "src/main.ts",
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "worker: launch",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/apps/worker",
+      "runtimeArgs": [
+        "--env-file-if-exists=../../.env",
+        "--conditions=@qic/source",
+        "--import",
+        "tsx",
+        "--import",
+        "./src/instrument.ts"
+      ],
+      "program": "src/main.ts",
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
+      "console": "integratedTerminal"
+    },
+    {
+      // pnpm --filter @qic/api dev:inspect
+      "name": "api: attach (9229)",
+      "type": "node",
+      "request": "attach",
+      "port": 9229,
+      "restart": true,
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"]
+    },
+    {
+      // pnpm --filter @qic/worker dev:inspect
+      "name": "worker: attach (9230)",
+      "type": "node",
+      "request": "attach",
+      "port": 9230,
+      "restart": true,
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"]
+    },
+    {
+      // Runs the unit tests of the file open in the editor. 运行编辑器中当前打开文件的单元测试。
+      "name": "vitest: current file",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/node_modules/vitest/vitest.mjs",
+      "args": ["run", "${relativeFile}"],
+      "autoAttachChildProcesses": true,
+      "smartStep": true,
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
+      "console": "integratedTerminal"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "api + worker",
+      "configurations": ["api: launch", "worker: launch"],
+      "stopAll": true
+    }
+  ]
+}

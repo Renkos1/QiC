@@ -1,0 +1,40 @@
+{
+  "name": "@qic/worker",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Background job processor (NestJS + BullMQ).",
+  "scripts": {
+    "build": "tsc-native -p tsconfig.build.json",
+    "dev": "tsx watch --env-file-if-exists=../../.env --conditions=@qic/source --import ./src/instrument.ts src/main.ts",
+    "dev:inspect": "tsx watch --inspect=9230 --env-file-if-exists=../../.env --conditions=@qic/source --import ./src/instrument.ts src/main.ts",
+    "start": "node --enable-source-maps --import ./dist/instrument.js dist/main.js",
+    "lint": "biome check .",
+    "typecheck": "tsc-native --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@nestjs/bullmq": "catalog:",
+    "@nestjs/common": "catalog:",
+    "@nestjs/core": "catalog:",
+    "@nestjs/platform-express": "catalog:",
+    "@opentelemetry/api": "catalog:",
+    "@qic/contracts": "workspace:*",
+    "@qic/logger": "workspace:*",
+    "@qic/mail": "workspace:*",
+    "@qic/telemetry": "workspace:*",
+    "bullmq": "catalog:",
+    "bullmq-otel": "catalog:",
+    "ioredis": "catalog:",
+    "reflect-metadata": "catalog:",
+    "rxjs": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@nestjs/testing": "catalog:",
+    "@qic/config": "workspace:*",
+    "@types/node": "catalog:",
+    "tsx": "catalog:",
+    "vitest": "catalog:"
+  }
+}

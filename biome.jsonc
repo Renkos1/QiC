@@ -1,0 +1,112 @@
+// Biome: formatter + linter for TS/JS/JSON/CSS. `pnpm format` fixes, `pnpm lint` checks.
+// Biome：TS/JS/JSON/CSS 的格式化与 lint。`pnpm format` 自动修复，`pnpm lint` 只检查。
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  // Respect .gitignore. 遵循 .gitignore。
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  // Generated files and migrations are never hand-formatted. 生成文件与迁移不做格式化。
+  "files": {
+    "includes": [
+      "**",
+      "!**/*.gen.ts",
+      "!contracts/openapi/openapi.json",
+      "!packages/db/migrations",
+      "!pnpm-lock.yaml"
+    ]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100
+  },
+  "javascript": {
+    // Nest uses legacy parameter decorators (`@Inject(TOKEN) x`). Nest 使用旧式参数装饰器。
+    "parser": {
+      "unsafeParameterDecoratorsEnabled": true
+    },
+    "formatter": {
+      "quoteStyle": "double",
+      "semicolons": "always",
+      "trailingCommas": "all"
+    }
+  },
+  // Understand @import "tailwindcss", @source, @theme. 识别 Tailwind 4 指令。
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    }
+  },
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "preset": "recommended",
+      // Logging goes through @qic/logger; types never fall back to any. 日志只用 @qic/logger；禁止 any。
+      "suspicious": {
+        "noExplicitAny": "error",
+        "noConsole": "error"
+      },
+      // Named exports only; file names are kebab-case or PascalCase (components).
+      // 只用具名导出；文件名为 kebab-case，组件为 PascalCase。
+      "style": {
+        "noDefaultExport": "error",
+        "useImportType": "error",
+        "useFilenamingConvention": {
+          "level": "error",
+          "options": {
+            "filenameCases": ["kebab-case", "PascalCase"],
+            "requireAscii": true
+          }
+        }
+      },
+      // Every promise must be awaited or handled. 每个 Promise 都必须 await 或显式处理。
+      "nursery": {
+        "noFloatingPromises": "error",
+        "noMisusedPromises": "error"
+      }
+    }
+  },
+  "overrides": [
+    {
+      // Nest dynamic modules are classes with a static forRoot(); the class is the module token.
+      // Nest 动态模块是只有静态 forRoot() 的类，类本身就是模块令牌。
+      "includes": ["apps/api/src/**/*.module.ts", "apps/worker/src/**/*.module.ts"],
+      "linter": {
+        "rules": {
+          "complexity": {
+            "noStaticOnlyClass": "off"
+          }
+        }
+      }
+    },
+    {
+      // Tools and Next.js route files require default exports. 工具配置和 Next 路由文件要求默认导出。
+      "includes": [
+        "**/*.config.ts",
+        "**/*.config.mjs",
+        "**/*.config.cjs",
+        "**/app/**/{page,layout,loading,error,not-found,template,default,route}.tsx",
+        "**/app/**/route.ts",
+        "tests/load/**"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "noDefaultExport": "off"
+          }
+        }
+      }
+    }
+  ]
+}

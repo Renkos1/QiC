@@ -1,0 +1,46 @@
+{
+  "name": "qic",
+  "private": true,
+  "description": "社区与简易智能硬件工作区",
+  "license": "MIT",
+  "type": "module",
+  "packageManager": "pnpm@12.6.0",
+  "engines": {
+    "node": "24.21.0",
+    "pnpm": "12.6.0"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "format": "biome check --write .",
+    "lint": "biome check .",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:int": "turbo run test:int",
+    "test:coverage": "vitest run --coverage",
+    "e2e": "pnpm --filter @qic/e2e e2e",
+    "gen": "turbo run gen",
+    "contracts:check": "pnpm --filter @qic/contracts contracts:check",
+    "deps:check": "depcruise \"{apps,packages}/*/{src,bin,scripts}/**/*.{ts,tsx,mts,cts,js,mjs,cjs}\" \"contracts/{src,scripts}/**/*.ts\" --config .dependency-cruiser.cjs",
+    "db:generate": "pnpm --filter @qic/db db:generate",
+    "db:migrate": "pnpm --filter @qic/db db:migrate",
+    "db:seed": "pnpm --filter @qic/db db:seed",
+    "check": "biome check . && turbo run typecheck test && pnpm deps:check && pnpm contracts:check",
+    "prepare": "lefthook install",
+    "test:load": "k6 run tests/load/todos.js",
+    "eval": "pnpm --filter @qic/evals eval",
+    "docker:build": "node tools/docker-build.mjs"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.14",
+    "@commitlint/cli": "21.2.3",
+    "@commitlint/config-conventional": "21.2.3",
+    "@commitlint/types": "21.2.3",
+    "@vitest/coverage-v8": "catalog:",
+    "dependency-cruiser": "18.4.0",
+    "lefthook": "2.1.14",
+    "turbo": "2.11.3",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

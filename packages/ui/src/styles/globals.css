@@ -1,0 +1,113 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/* Components live in this package; make Tailwind scan them from any consuming app. */
+@source "../components";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * "Engineering journal" theme:
+ * warm paper with a faint drafting grid, graphite ink, hairline rules, near-square
+ * corners, Outfit / MiSans for text and Geist Mono for small uppercase labels.
+ * Color marks actions and state; large surfaces stay paper.
+ */
+:root {
+  --journal-paper: #eceae5;
+  --journal-ink: #24211d;
+  --journal-grid: rgb(36 33 29 / 4.5%);
+
+  /* Accent palette from the site's voxel cursor. */
+  --accent-salmon: #c9857c;
+  --accent-sage: #8fa892;
+  --accent-sand: #d8c27a;
+  --accent-steel: #7e98b7;
+
+  --radius: 2px;
+  --background: var(--journal-paper);
+  --foreground: var(--journal-ink);
+  --card: rgb(236 233 227 / 93%);
+  --card-foreground: var(--journal-ink);
+  --popover: #f4f2ed;
+  --popover-foreground: var(--journal-ink);
+  --primary: #3a3d40;
+  --primary-foreground: #ffffff;
+  --secondary: rgb(255 255 255 / 45%);
+  --secondary-foreground: var(--journal-ink);
+  --muted: rgb(36 33 29 / 6%);
+  --muted-foreground: rgb(36 33 29 / 55%);
+  --accent: rgb(36 33 29 / 6%);
+  --accent-foreground: var(--journal-ink);
+  --destructive: #a8473c;
+  --border: rgb(36 33 29 / 13%);
+  --input: rgb(36 33 29 / 20%);
+  --ring: var(--accent-sage);
+  --shadow-journal: 7px 7px 0 rgb(36 33 29 / 6%);
+}
+
+@theme inline {
+  --font-sans:
+    "Outfit Variable", "MiSans", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui,
+    sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SFMono-Regular", monospace;
+
+  --radius-sm: 1px;
+  --radius-md: var(--radius);
+  --radius-lg: var(--radius);
+  --radius-xl: 4px;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-salmon: var(--accent-salmon);
+  --color-sage: var(--accent-sage);
+  --color-sand: var(--accent-sand);
+  --color-steel: var(--accent-steel);
+  --shadow-journal: var(--shadow-journal);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background font-sans text-foreground;
+    background-image:
+      linear-gradient(var(--journal-grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--journal-grid) 1px, transparent 1px);
+    background-size: 54px 54px;
+  }
+  h1,
+  h2,
+  h3 {
+    font-weight: 380;
+    letter-spacing: -0.035em;
+  }
+  :is(a, button, [role="checkbox"], summary):focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 3px;
+  }
+}
+
+@layer components {
+  /* Small uppercase mono label, e.g. "QIC / COMMUNITY / 2026". */
+  .journal-kicker {
+    @apply font-mono text-[0.62rem] text-muted-foreground uppercase;
+    letter-spacing: 0.13em;
+  }
+}

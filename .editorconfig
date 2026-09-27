@@ -1,0 +1,15 @@
+# Editor defaults for every file; Biome enforces the same for code. 编辑器通用设置；代码格式最终以 Biome 为准。
+root = true
+
+[*]
+charset = utf-8
+# LF everywhere, including Windows checkouts (see .gitattributes). 所有平台统一 LF 换行。
+end_of_line = lf
+indent_style = space
+indent_size = 2
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# Two trailing spaces are a hard line break in Markdown. Markdown 中行尾两个空格表示换行，不能删。
+[*.md]
+trim_trailing_whitespace = false

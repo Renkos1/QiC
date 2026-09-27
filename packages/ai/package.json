@@ -1,0 +1,37 @@
+{
+  "name": "@qic/ai",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Model client wrapper, prompts and structured-output helpers.",
+  "exports": {
+    ".": {
+      "@qic/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc-native -p tsconfig.build.json",
+    "lint": "biome check .",
+    "typecheck": "tsc-native --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@ai-sdk/anthropic": "catalog:",
+    "@ai-sdk/otel": "catalog:",
+    "@opentelemetry/api": "catalog:",
+    "@qic/logger": "workspace:*",
+    "ai": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@opentelemetry/sdk-metrics": "catalog:",
+    "@qic/config": "workspace:*",
+    "@types/node": "catalog:",
+    "vitest": "catalog:"
+  }
+}

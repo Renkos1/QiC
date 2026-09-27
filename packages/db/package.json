@@ -1,0 +1,49 @@
+{
+  "name": "@qic/db",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Drizzle schema, migrations, seed and database client.",
+  "exports": {
+    ".": {
+      "@qic/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./seed": {
+      "@qic/source": "./src/seed.ts"
+    },
+    "./testing": {
+      "@qic/source": "./src/testing.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "migrations"
+  ],
+  "scripts": {
+    "build": "tsc-native -p tsconfig.build.json",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx --env-file-if-exists=../../.env --conditions=@qic/source src/scripts/migrate.ts",
+    "db:seed": "tsx --env-file-if-exists=../../.env --conditions=@qic/source src/scripts/seed.ts",
+    "lint": "biome check .",
+    "typecheck": "tsc-native --noEmit",
+    "test": "vitest run",
+    "test:int": "vitest run --config vitest.int.config.ts"
+  },
+  "dependencies": {
+    "drizzle-orm": "catalog:",
+    "pg": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@qic/config": "workspace:*",
+    "@testcontainers/postgresql": "catalog:",
+    "@types/node": "catalog:",
+    "@types/pg": "catalog:",
+    "better-auth": "catalog:",
+    "drizzle-kit": "catalog:",
+    "tsx": "catalog:",
+    "vitest": "catalog:"
+  }
+}

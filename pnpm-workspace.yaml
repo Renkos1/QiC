@@ -1,0 +1,134 @@
+# pnpm workspace: member packages, shared versions and install policy. pnpm 工作区：成员包、共享版本与安装策略。
+packages:
+  - apps/*
+  - packages/*
+  - contracts
+  - tests/*
+  - evals
+
+# Single source of truth for shared dependency versions; reference with "catalog:".
+# 共享依赖版本的唯一来源；各包的 package.json 中写 "catalog:" 引用。
+catalog:
+  "@ai-sdk/anthropic": 4.0.65
+  "@ai-sdk/otel": 1.0.116
+  ai: 7.0.116
+  "@fontsource-variable/outfit": 5.3.0
+  geist: 1.7.2
+  better-auth: 1.7.5
+  bullmq: 6.3.8
+  class-variance-authority: 0.7.1
+  clsx: 2.1.1
+  drizzle-kit: 0.31.11
+  drizzle-orm: 0.45.3
+  ioredis: 6.0.0
+  "@asteasolutions/zod-to-openapi": 9.1.0
+  "@nestjs/bullmq": 12.0.0
+  "@nestjs/common": 12.1.0
+  "@nestjs/core": 12.1.0
+  "@nestjs/platform-express": 12.1.0
+  "@nestjs/testing": 12.1.0
+  "@hookform/resolvers": 5.9.1
+  lucide-react: 1.48.0
+  next: 16.3.6
+  nodemailer: 10.0.10
+  openapi-fetch: 0.17.0
+  openapi-typescript: 7.13.0
+  pg: 8.23.0
+  pino: 10.3.1
+  pino-pretty: 13.1.3
+  radix-ui: 1.6.7
+  react: 19.3.0
+  reflect-metadata: 0.2.2
+  rxjs: 7.8.2
+  react-dom: 19.3.0
+  react-hook-form: 7.88.0
+  shadcn: 4.21.0
+  tailwind-merge: 3.7.0
+  tailwindcss: 4.3.3
+  testcontainers: 12.1.0
+  "@tailwindcss/postcss": 4.3.3
+  "@tanstack/react-query": 5.103.2
+  tsx: 4.23.15
+  tw-animate-css: 1.4.0
+  "@types/node": 24.13.6
+  "@types/nodemailer": 8.0.2
+  "@types/pg": 8.23.1
+  "@types/react": 19.3.0
+  "@playwright/test": 1.63.0
+  "@testcontainers/postgresql": 12.1.0
+  "@testcontainers/redis": 12.1.0
+  "@types/react-dom": 19.3.0
+  typescript: 6.0.3
+  vite: 8.3.0
+  vitest: 5.0.2
+  "@vitest/coverage-v8": 5.0.2
+  jsdom: 30.1.1
+  "@testing-library/react": 16.3.3
+  "@testing-library/dom": 10.4.2
+  zod: 4.6.5
+  # Observability (Phase 9). 可观测性。
+  "@opentelemetry/api": 1.9.1
+  "@opentelemetry/api-logs": 0.222.0
+  "@opentelemetry/exporter-logs-otlp-http": 0.222.0
+  "@opentelemetry/exporter-metrics-otlp-http": 0.222.0
+  "@opentelemetry/exporter-trace-otlp-http": 0.222.0
+  "@opentelemetry/instrumentation": 0.222.0
+  "@opentelemetry/instrumentation-express": 0.70.0
+  "@opentelemetry/instrumentation-fetch": 0.222.0
+  "@opentelemetry/instrumentation-http": 0.222.0
+  "@opentelemetry/instrumentation-ioredis": 0.70.0
+  "@opentelemetry/instrumentation-nestjs-core": 0.68.0
+  "@opentelemetry/instrumentation-pg": 0.74.0
+  "@opentelemetry/instrumentation-pino": 0.68.0
+  "@opentelemetry/instrumentation-runtime-node": 0.35.0
+  "@opentelemetry/resources": 2.11.0
+  "@opentelemetry/sdk-logs": 0.222.0
+  "@opentelemetry/sdk-metrics": 2.11.0
+  "@opentelemetry/sdk-node": 0.222.0
+  "@opentelemetry/sdk-trace-base": 2.11.0
+  "@opentelemetry/sdk-trace-web": 2.11.0
+  "@opentelemetry/semantic-conventions": 1.43.0
+  "@vercel/otel": 2.1.3
+  "@langfuse/otel": 5.11.1
+  "@sentry/nextjs": 11.0.0
+  "@sentry/node": 11.0.0
+  "@bull-board/api": 9.10.1
+  "@bull-board/express": 9.10.1
+  bullmq-otel: 2.0.1
+  # ESM loader hook used by OTel instrumentations; pinned so the hook and Hook() share one instance.
+  # OTel 插桩使用的 ESM 加载钩子；固定版本以保证钩子与 Hook() 是同一实例。
+  import-in-the-middle: 3.5.1
+
+# Dependency lifecycle scripts are opt-in (pnpm blocks unknown ones). 依赖的安装脚本默认禁止，逐个声明。
+allowBuilds:
+  # testcontainers -> docker-modem -> ssh2: optional native crypto/CPU bindings with JS fallbacks. 可选原生加速，有 JS 回退。
+  cpu-features: false
+  ssh2: false
+  # Postinstall only prints a version notice. 安装脚本只打印版本提示。
+  protobufjs: false
+  # Postinstall only verifies the platform binary, which is already an optional dependency. 平台二进制已由可选依赖提供。
+  esbuild: false
+  # Hooks are installed by the root "prepare" script instead. 钩子由根目录 prepare 脚本安装。
+  lefthook: false
+  # Optional native accelerator for bullmq/msgpackr; prebuilt binaries ship as optional deps and it falls back to JS. 可选原生加速，有 JS 回退。
+  msgpackr-extract: false
+
+# Released within pnpm's minimumReleaseAge window at the time of pinning; drop once aged.
+# 锁定时仍在 pnpm 最短发布时长窗口内的版本；过了窗口期后从这里删除。
+minimumReleaseAgeExclude:
+  - lucide-react@1.48.0
+  - "@nestjs/common@12.1.0"
+  - "@nestjs/core@12.1.0"
+  - "@nestjs/platform-express@12.1.0"
+  - "@nestjs/testing@12.1.0"
+  - '@ai-sdk/anthropic@4.0.65'
+  - '@ai-sdk/otel@1.0.116'
+  - '@ai-sdk/provider-utils@5.0.49'
+  - ai@7.0.116
+  - '@ai-sdk/gateway@4.0.94'
+
+peerDependencyRules:
+  allowedVersions:
+    # Verified working with TS 6 (JS compiler API unchanged); upstream peer range lags. 已验证兼容 TS 6，上游 peer 范围未更新。
+    openapi-typescript>typescript: "6"
+

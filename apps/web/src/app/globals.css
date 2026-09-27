@@ -1,0 +1,4 @@
+@import "@qic/ui/globals.css";
+
+/* Tailwind only scans this app by default; include its sources explicitly. */
+@source "../";

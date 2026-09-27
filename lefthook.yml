@@ -1,0 +1,24 @@
+# Git hooks, installed by the root "prepare" script. Never bypass with --no-verify (AGENTS.md §5).
+# Git 钩子，由根目录 prepare 脚本安装。禁止用 --no-verify 绕过（AGENTS.md §5）。
+# https://lefthook.dev/configuration/
+pre-commit:
+  parallel: true
+  jobs:
+    # Format and lint staged files, then re-stage the fixes. 格式化并检查暂存文件，自动修复后重新暂存。
+    - name: biome
+      glob: "*.{js,mjs,cjs,ts,tsx,json,jsonc,css}"
+      run: pnpm exec biome check --write --no-errors-on-unmatched --files-ignore-unknown=true {staged_files}
+      stage_fixed: true
+
+    # tsc cannot check single files against a project config, so type check
+    # every package touched since HEAD (plus its dependents) instead.
+    # tsc 无法按单文件检查，因此对自 HEAD 以来改动的包及其依赖方做类型检查。
+    - name: typecheck
+      glob: "*.{ts,tsx,mts,cts}"
+      run: pnpm exec turbo run typecheck --filter=...[HEAD] --output-logs=errors-only
+
+# Conventional Commits, e.g. "feat(api): add cursor pagination". 提交信息必须符合 Conventional Commits。
+commit-msg:
+  jobs:
+    - name: commitlint
+      run: pnpm exec commitlint --edit {1}

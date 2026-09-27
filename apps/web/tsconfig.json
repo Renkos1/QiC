@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "@qic/config/tsconfig/next.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "paths": {
+      "@/*": ["./src/*"],
+      "@qic/api-client": ["../../packages/api-client/src/index.ts"]
+    }
+  },
+  "include": ["next-env.d.ts", "src", "next.config.ts", "vitest.config.ts"],
+  "exclude": ["node_modules", ".next/standalone"]
+}

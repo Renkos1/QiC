@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "@qic/config/tsconfig/next.json",
+  "compilerOptions": {
+    "plugins": [],
+    "paths": {
+      "@qic/ui/*": ["./src/*"]
+    }
+  },
+  "include": ["src"]
+}

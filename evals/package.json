@@ -1,0 +1,24 @@
+{
+  "name": "@qic/evals",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Offline evaluations for AI features (run when prompts or models change).",
+  "scripts": {
+    "eval": "tsx --env-file-if-exists=../.env --conditions=@qic/source src/run.ts",
+    "lint": "biome check .",
+    "typecheck": "tsc-native --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@qic/ai": "workspace:*",
+    "@qic/logger": "workspace:*",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@qic/config": "workspace:*",
+    "@types/node": "catalog:",
+    "tsx": "catalog:",
+    "vitest": "catalog:"
+  }
+}

@@ -1,0 +1,223 @@
+# SLO-based alert rules for the local obs profile (grafana/otel-lgtm), provisioned by
+# docker-compose.yml. Every rule links its runbook; thresholds are starting points, tune
+# them with real traffic. The same PromQL works in any Prometheus-compatible backend.
+# 本地 obs profile（grafana/otel-lgtm）的 SLO 告警规则，由 docker-compose.yml 挂载加载。
+# 每条规则都链接对应 runbook；阈值只是起点，需按真实流量调整。PromQL 可直接用于其他 Prometheus 兼容后端。
+#
+# SLOs / 服务等级目标:
+#   api availability 99.5% of requests without 5xx      可用性：99.5% 的请求不返回 5xx
+#   api latency      p95 < 500 ms                       延迟：p95 < 500 ms
+#   queues           backlog drained within 10 minutes  队列：积压在 10 分钟内消化
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: qic-slo
+    folder: QiC
+    interval: 1m
+    rules:
+      # Fast burn: at this rate a 30-day error budget (0.5%) is gone in ~2 days.
+      # 快速消耗：按此速度，30 天的错误预算（0.5%）约 2 天耗尽。
+      - uid: qic-api-error-budget
+        title: api 5xx error budget burning fast
+        condition: C
+        for: 2m
+        noDataState: OK
+        execErrState: Error
+        labels: { severity: critical, slo: api-availability }
+        annotations:
+          summary: "{{ $labels.service_name }}: 5xx ratio above 14.4x the error budget over 5m and 1h"
+          runbook_url: docs/runbooks/api-5xx.md
+        data:
+          - refId: A
+            relativeTimeRange: { from: 3600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              instant: true
+              expr: >-
+                (
+                  sum by (service_name) (rate(http_server_request_duration_seconds_count{service_name="api", http_response_status_code=~"5.."}[5m]))
+                  / sum by (service_name) (rate(http_server_request_duration_seconds_count{service_name="api"}[5m]))
+                ) > (14.4 * 0.005)
+                and
+                (
+                  sum by (service_name) (rate(http_server_request_duration_seconds_count{service_name="api", http_response_status_code=~"5.."}[1h]))
+                  / sum by (service_name) (rate(http_server_request_duration_seconds_count{service_name="api"}[1h]))
+                ) > (14.4 * 0.005)
+          - &firing
+            refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+
+      - uid: qic-api-latency
+        title: api p95 latency above 500 ms
+        condition: C
+        for: 10m
+        noDataState: OK
+        execErrState: Error
+        labels: { severity: warning, slo: api-latency }
+        annotations:
+          summary: "api p95 latency is {{ humanizeDuration $values.A.Value }}"
+          runbook_url: docs/runbooks/slow-api.md
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              instant: true
+              expr: >-
+                histogram_quantile(0.95, sum by (le) (rate(http_server_request_duration_seconds_bucket{service_name="api"}[5m])))
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0.5] }
+
+      # A blocked event loop delays every request in the process.
+      # 事件循环被阻塞时，进程内所有请求都会变慢。
+      - uid: qic-event-loop-lag
+        title: Event loop p99 delay above 200 ms
+        condition: C
+        for: 5m
+        noDataState: OK
+        execErrState: Error
+        labels: { severity: warning, slo: api-latency }
+        annotations:
+          summary: "{{ $labels.service_name }}: event loop p99 delay is {{ humanizeDuration $values.A.Value }}"
+          runbook_url: docs/runbooks/slow-api.md
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              instant: true
+              expr: max by (service_name) (nodejs_eventloop_delay_p99_seconds)
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0.2] }
+
+      - uid: qic-queue-backlog
+        title: Queue backlog not draining
+        condition: C
+        for: 10m
+        noDataState: OK
+        execErrState: Error
+        labels: { severity: warning, slo: queue-latency }
+        annotations:
+          summary: "{{ $labels.messaging_destination_name }}: {{ $values.A.Value }} jobs waiting for 10 minutes"
+          runbook_url: docs/runbooks/queue-backlog.md
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              instant: true
+              expr: >-
+                sum by (messaging_destination_name) (qic_queue_jobs{state=~"waiting|prioritized|delayed", messaging_destination_name!="dead-letter"})
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [100] }
+
+      # Every dead letter is a job that exhausted its retries and needs a human.
+      # 每条死信都是重试耗尽、需要人工处理的任务。
+      - uid: qic-dead-letters
+        title: Jobs in the dead-letter queue
+        condition: C
+        for: 0s
+        noDataState: OK
+        execErrState: Error
+        labels: { severity: warning, slo: queue-latency }
+        annotations:
+          summary: "{{ $values.A.Value }} dead-lettered jobs are waiting for inspection"
+          runbook_url: docs/runbooks/queue-backlog.md
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              instant: true
+              expr: sum(qic_queue_jobs{messaging_destination_name="dead-letter", state="waiting"})
+          - *firing
+
+      - uid: qic-heap-growth
+        title: Heap large and still growing
+        condition: C
+        for: 30m
+        noDataState: OK
+        execErrState: Error
+        labels: { severity: warning }
+        annotations:
+          summary: "{{ $labels.service_name }}: heap above 300 MB and growing for 30 minutes"
+          runbook_url: docs/runbooks/memory-leak.md
+        data:
+          - refId: A
+            relativeTimeRange: { from: 3600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              instant: true
+              expr: >-
+                (sum by (service_name) (v8js_memory_heap_used_bytes) > 300e6)
+                and
+                (deriv(sum by (service_name) (v8js_memory_heap_used_bytes)[30m:1m]) > 0)
+          - *firing
+
+      # Successful calls are counted by the token histogram, failures by qic_gen_ai_failures_total.
+      # 成功调用由 token 直方图计数，失败由 qic_gen_ai_failures_total 计数。
+      - uid: qic-llm-failures
+        title: AI operations failing
+        condition: C
+        for: 15m
+        noDataState: OK
+        execErrState: Error
+        labels: { severity: warning }
+        annotations:
+          summary: "{{ $labels.qic_ai_operation }}: more than 20% of AI calls failed over 15 minutes"
+          runbook_url: docs/runbooks/llm-output.md
+        data:
+          - refId: A
+            relativeTimeRange: { from: 900, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              instant: true
+              expr: >-
+                sum by (qic_ai_operation) (increase(qic_gen_ai_failures_total[15m]))
+                / (
+                  sum by (qic_ai_operation) (increase(qic_gen_ai_failures_total[15m]))
+                  + (
+                    sum by (qic_ai_operation) (increase(gen_ai_client_token_usage_count{gen_ai_token_type="output"}[15m]))
+                    or 0 * sum by (qic_ai_operation) (increase(qic_gen_ai_failures_total[15m]))
+                  )
+                )
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0.2] }

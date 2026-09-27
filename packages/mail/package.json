@@ -1,0 +1,32 @@
+{
+  "name": "@qic/mail",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "SMTP mailer and email templates.",
+  "exports": {
+    ".": {
+      "@qic/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc-native -p tsconfig.build.json",
+    "lint": "biome check .",
+    "typecheck": "tsc-native --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "nodemailer": "catalog:"
+  },
+  "devDependencies": {
+    "@qic/config": "workspace:*",
+    "@types/node": "catalog:",
+    "@types/nodemailer": "catalog:",
+    "vitest": "catalog:"
+  }
+}
