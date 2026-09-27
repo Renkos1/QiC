@@ -26,6 +26,11 @@ const stackEnv = {
   API_ORIGIN: `http://localhost:${API_PORT}`,
 };
 
+// On Linux Playwright stops a server by SIGKILL to its process group, but `pnpm exec` runs the
+// command in a group of its own: the server survives, keeps the output pipe open and teardown
+// waits forever. pnpm forwards SIGTERM to that group, and the apps shut down on it.
+const gracefulShutdown = { signal: "SIGTERM", timeout: 10_000 } as const;
+
 /** Playwright configuration (Chromium only). Playwright 配置（仅 Chromium）。 */
 export default defineConfig({
   testDir: "./specs",
@@ -58,6 +63,7 @@ export default defineConfig({
           env: { ...stackEnv, PORT: String(API_PORT) },
           reuseExistingServer: !isCI,
           timeout: 60_000,
+          gracefulShutdown,
         },
         {
           name: "worker",
@@ -67,6 +73,7 @@ export default defineConfig({
           env: { ...stackEnv, LOG_LEVEL: "info", WORKER_HEALTH_PORT: "14300" },
           wait: { stdout: /worker started/ },
           timeout: 60_000,
+          gracefulShutdown,
         },
         {
           name: "web",
@@ -76,6 +83,7 @@ export default defineConfig({
           env: stackEnv,
           reuseExistingServer: !isCI,
           timeout: 120_000,
+          gracefulShutdown,
         },
       ],
 });
