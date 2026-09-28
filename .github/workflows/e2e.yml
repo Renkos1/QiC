@@ -14,8 +14,11 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# PR runs group by PR number: once a PR is closed its ref falls back to the base branch, and a label
+# event on it (release-please tags merged release PRs) would otherwise cancel the run on main.
+# PR 按编号分组：PR 关闭后 ref 回落为目标分支，其标签事件（release-please 给已合并的发布 PR 打标签）否则会取消 main 上的运行。
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
@@ -28,7 +31,8 @@ env:
 jobs:
   smoke:
     name: e2e-smoke
-    if: github.event_name == 'pull_request'
+    # Events on closed PRs have nothing left to gate. 已关闭 PR 的事件无需再把关。
+    if: github.event_name == 'pull_request' && github.event.pull_request.state == 'open'
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
@@ -62,7 +66,7 @@ jobs:
 
   production:
     name: e2e-production
-    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'e2e:production')
+    if: github.event_name != 'pull_request' || (github.event.pull_request.state == 'open' && contains(github.event.pull_request.labels.*.name, 'e2e:production'))
     runs-on: ubuntu-24.04
     timeout-minutes: 40
     steps:
