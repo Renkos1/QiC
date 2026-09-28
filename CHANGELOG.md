@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/Renkos1/QiC/compare/v0.1.0...v0.1.1) (2026-09-28)
+
+
+### Bug Fixes
+
+* **ci:** stop e2e label events on closed PRs from cancelling main ([#4](https://github.com/Renkos1/QiC/issues/4)) ([0c9c769](https://github.com/Renkos1/QiC/commit/0c9c769053b15b3997d591f1b5d8a0ef666cd0e0))
+
 ## 0.1.0 (2026-09-27)
 
 
