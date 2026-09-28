@@ -1,7 +1,7 @@
 {
   "name": "qic",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "社区与简易智能硬件工作区",
   "license": "MIT",
   "type": "module",
